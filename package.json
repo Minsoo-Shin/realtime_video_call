@@ -1,0 +1,23 @@
+{
+  "type": "module",
+  "name": "noom",
+  "version": "1.0.0",
+  "description": "Zoom Clone using Web RTC and Websockets",
+  "license": "AIM",
+  "scripts": {
+    "dev": "nodemon"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.17.0",
+    "@babel/core": "^7.17.2",
+    "@babel/node": "^7.16.8",
+    "@babel/preset-env": "^7.16.11",
+    "express": "^4.17.2",
+    "nodemon": "^2.0.15",
+    "pug": "^3.0.2"
+  },
+  "dependencies": {
+    "socket.io": "^4.4.1",
+    "ws": "^8.5.0"
+  }
+}
