@@ -1,50 +1,75 @@
-const messageList = document.querySelector("ul");
-const nickForm = document.querySelector("#nick");
-// console.log(nickForm);
-console.log(messageList);
-const messageForm = document.querySelector("#message");
-const socket = new WebSocket(`ws://${window.location.host}`);
+const socket = io();
 
-function makeMessage(type, payload) {
-    const msg = {type, payload};
-    return JSON.stringify(msg);
+const welcome = document.getElementById("welcome");
+const form = welcome.querySelector("form");
+const room = document.getElementById("room");
+
+// function backendDone(msg) {
+//     console.log(`The backend says: `, msg);
+// }
+
+room.hidden = true;
+let roomName;
+
+function addMessage(message) {
+    const ul = room.querySelector('ul');
+    const li = document.createElement("li");
+    li.innerText = message;
+    ul.appendChild(li);
 }
 
-function handleOpen() {
-    console.log("Connected to Server");
+function handleMessageSubmit(event) {
+    event.preventDefault();
+    const input = room.querySelector("#msg input");
+    console.log(input.value);
+    const value = input.value;
+    socket.emit("new_message", input.value, roomName, ()=> {
+        console.log(input.value);
+        addMessage(`You: ${value}`); //바로 input.value를 사용하면 왜 아무값도 없는거지?
+    });
+    input.value="";
+}
+
+function handleNicknameSubmit(event) {
+    event.preventDefault();
+    console.log("handleRoomSubmit");
+    const input = room.querySelector("#name input");
+    socket.emit("nickname", input.value);
+    input.value="";
 };
 
-function handleClose() {
-    console.log("Disconnect from Server");
-};
+function showRoom() {
+    welcome.hidden = true;
+    room.hidden = false;
+    const h3 = room.querySelector("h3");
+    h3.innerText = `Room ${roomName}`;
+    const msgForm = room.querySelector("#msg");
+    const nameForm = room.querySelector("#name");
+    msgForm.addEventListener("submit", handleMessageSubmit);
+    nameForm.addEventListener("submit", handleNicknameSubmit);
+}
 
-socket.addEventListener("open", handleOpen);
-socket.addEventListener("close", handleClose);
-socket.addEventListener("message", (message) => {
-    const li = document.createElement("li");
-    li.innerText = message.data;
-    messageList.append(li);
+function handleRoomSubmit(event) {
+    event.preventDefault();
+    console.log("handleRoomSubmit");
+    const input = form.querySelector("input");
+    socket.emit("enter_room", input.value, showRoom);
+    roomName = input.value;
+    input.value = "";
+}
+
+form.addEventListener("submit", handleRoomSubmit);
+
+socket.on("welcome", (user, newCount) => {
+    const h3 = room.querySelector("h3");
+    h3.innerText = `Room ${roomName} (${newCount})`;
+    addMessage(`${user} joined!`)
 });
 
-function handleSubmit(event) {
-    event.preventDefault(); //event에 따라서 따로 동작을 막아주는 함수다. 
-    console.log("handlesubmit");
-    const input = messageForm.querySelector("input");
-    socket.send(makeMessage("new_message", input.value));
-    const li = document.createElement("li");
-    li.innerText = `You: ${input.value}`;
-    console.log(li);
-    messageList.append(li);
-    input.value = "";
-}
+socket.on("bye", (user, newCount)=> {
+    const h3 = room.querySelector("h3");
+    h3.innerText = `Room ${roomName} (${newCount})`;
+    addMessage(`${user} left ㅠㅠ`);
+});
 
-function handleNickSubmit(event) {
-    event.preventDefault();
-    console.log("handleNick");
-    const input = nickForm.querySelector("input");
-    socket.send(makeMessage("nickname", input.value));
-    console.log("send nickname from browser")
-    input.value = "";
-}
-messageForm.addEventListener("submit", handleSubmit);
-nickForm.addEventListener("submit", handleNickSubmit);
+socket.on("new_message", addMessage);
